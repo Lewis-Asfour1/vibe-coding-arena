@@ -1,123 +1,96 @@
 /* 
-   FOCUS GUARD CORE LOGIC 
-   Gemini API Key Integrated
+   FOCUS GUARD CORE
+   Surgical Blocking Logic + Local AI
 */
-const API_KEY = "AQ.Ab8RN6Lr-aXkPL85xNvcYLo1IHaubgN5L7vbGlQ7mM-rMHFVeQ";
 
 const State = {
-    currentTab: 'feed',
     timer: 0,
     limit: 7,
     locked: false,
+    view: 'home',
     interval: null,
-    aiMode: 'therapy'
+    mode: 'therapy'
 };
 
 const $ = (s) => document.querySelector(s);
 
 /* --- NAVIGATION --- */
-function switchTab(name) {
+function tab(name) {
     if (State.locked && name === 'reels') return;
-    
-    State.currentTab = name;
+    State.view = name;
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     $(`#view-${name}`).classList.add('active');
-    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === name));
 
-    if (name === 'reels') startTimer();
-    else stopTimer();
+    if (name === 'reels') startMonitoring();
+    else stopMonitoring();
 }
 
-/* --- BLOCKER --- */
-function startTimer() {
+/* --- REELS MONITOR --- */
+function startMonitoring() {
     clearInterval(State.interval);
     State.interval = setInterval(() => {
         State.timer += 0.1;
-        updateMeter();
-        if (State.timer >= State.limit) triggerLock();
+        $('#meter-val').textContent = Math.floor(State.timer) + 's';
+        $('#c-fill').style.strokeDashoffset = 100.5 * (1 - (State.timer/State.limit));
+        if (State.timer >= State.limit) triggerGuard();
     }, 100);
 }
 
-function stopTimer() {
+function stopMonitoring() {
     clearInterval(State.interval);
-    if (!State.locked) { State.timer = 0; updateMeter(); }
+    if (!State.locked) { State.timer = 0; $('#c-fill').style.strokeDashoffset = 100.5; }
 }
 
-function updateMeter() {
-    const pct = Math.min(State.timer / State.limit, 1);
-    $('#ring-fill').style.strokeDashoffset = 97.4 * (1 - pct);
-    $('#meter-text').textContent = Math.floor(State.timer) + 's';
-}
-
-function triggerLock() {
-    stopTimer();
+function triggerGuard() {
+    stopMonitoring();
     State.locked = true;
     $('#guard-overlay').classList.remove('hidden');
 }
 
-/* --- GUARD OVERLAY LOGIC --- */
-function showAI(mode) {
-    State.aiMode = mode;
-    $('#ai-title').textContent = mode === 'therapy' ? 'Compass' : 'Study Buddy';
-    $('#guard-choice').classList.add('hidden');
+/* --- OVERLAY UI --- */
+function openAI(m) {
+    State.mode = m;
+    $('#chat-title').textContent = m === 'therapy' ? 'The Compass' : 'Study Buddy';
+    $('#guard-menu').classList.add('hidden');
     $('#guard-chat').classList.remove('hidden');
 }
 
-function backToGuardMenu() {
+function backToMenu() {
     $('#guard-chat').classList.add('hidden');
-    $('#guard-choice').classList.remove('hidden');
+    $('#guard-menu').classList.remove('hidden');
 }
 
-function exitGuard() {
-    State.locked = false;
-    State.timer = 0;
+function deactivateGuard() {
+    State.locked = false; State.timer = 0;
     $('#guard-overlay').classList.add('hidden');
-    switchTab('feed');
+    tab('home');
 }
 
-/* --- GEMINI AI INTEGRATION --- */
-async function handleGemini() {
-    const input = $('#ai-input');
-    const display = $('#ai-chat-display');
-    const val = input.value;
-    if (!val) return;
+/* --- LOCAL AI LOGIC --- */
+function handleBotMessage() {
+    const input = $('#chat-input');
+    const display = $('#chat-display');
+    if (!input.value) return;
 
-    // User Msg
     const u = document.createElement('div');
-    u.className = 'user-msg';
-    u.textContent = val;
+    u.className = 'user-bubble';
+    u.textContent = input.value;
     display.appendChild(u);
     input.value = '';
 
-    // Thinking
     const b = document.createElement('div');
-    b.className = 'bot-msg';
-    b.textContent = "AI is thinking...";
+    b.className = 'bot-bubble';
+    b.textContent = "...";
     display.appendChild(b);
     display.scrollTop = display.scrollHeight;
 
-    const context = State.aiMode === 'therapy' 
-        ? "You are The Compass, an empathetic digital therapist. User just got blocked from Reels."
-        : "You are Study Buddy, an academic tutor. Explain the topic simply.";
-
-    try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ contents: [{ parts: [{ text: `${context} User: ${val}` }] }] })
-        });
-        const data = await res.json();
-        b.textContent = data.candidates[0].content.parts[0].text;
-    } catch (e) {
-        b.textContent = State.aiMode === 'therapy' ? "Take a breath. You are in control." : "Focus on the basics of this topic first.";
-    }
-    display.scrollTop = display.scrollHeight;
+    setTimeout(() => {
+        if (State.mode === 'therapy') {
+            b.textContent = "Take a breath. Reclaiming your time from the scroll loop is a victory. What's one thing you can see right now?";
+        } else {
+            b.textContent = "Great topic. Focus on the core definition first. Can you summarize why this is important in one sentence?";
+        }
+        display.scrollTop = display.scrollHeight;
+    }, 800);
 }
-
-/* --- LISTENERS --- */
-document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
-document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => {
-    if(b.dataset.go === 'feed') exitGuard();
-    else switchTab(b.dataset.go);
-}));
-$('#ai-send-btn').addEventListener('click', handleGemini);
