@@ -1,100 +1,110 @@
-const API_KEY = "AQ.Ab8RN6Lr-aXkPL85xNvcYLo1IHaubgN5L7vbGlQ7mM-rMHFVeQ";
+/* FOCUS GUARD ENGINE */
 
 const State = {
-    timer: 0,
-    limit: 7,
+    currentTab: 'feed',
+    limit: 7, 
+    elapsed: 0,
     locked: false,
-    tab: 'feed',
-    interval: null
+    ticker: null
+};
+
+const BotResponses = {
+    "bored": "Boredom is just your brain asking for real stimulation. Try drinking some water or walking for 2 minutes.",
+    "anxious": "When we scroll fast, our heart rate goes up. Take three deep breaths right now. I'm here.",
+    "lost": "It's okay to feel lost. The loop is designed to make you forget your goals. What is ONE thing you wanted to do today?",
+    "help": "I'm here. You've already done the hardest part: putting the scroll down. How does your body feel?",
+    "default": "I hear you. Breaking the digital loop is tough, but you're back in control now. What's one small thing you can do off-screen?"
 };
 
 const $ = (s) => document.querySelector(s);
 
-function log(msg) {
-    const b = $('#c-body');
-    const l = document.createElement('div');
-    l.textContent = `> [${new Date().toLocaleTimeString()}] ${msg}`;
-    b.appendChild(l);
-    b.scrollTop = b.scrollHeight;
-}
-
 function switchTab(name) {
-    if (State.locked && name === 'reels') return;
-    State.tab = name;
+    if (State.locked && name === 'reels') {
+        $('.guard-inner').animate([{transform:'translateX(-5px)'},{transform:'translateX(5px)'}], 100);
+        return;
+    }
+
+    State.currentTab = name;
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     $(`#view-${name}`).classList.add('active');
-    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.textContent.toLowerCase().includes(name)));
+    
+    document.querySelectorAll('.tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.tab === name);
+    });
 
-    if (name === 'reels') startMonitoring();
-    else stopMonitoring();
+    if (name === 'reels') {
+        startTimer();
+    } else {
+        stopTimer();
+        if (State.locked) unlock(name);
+    }
 }
 
-function startMonitoring() {
-    clearInterval(State.interval);
-    State.interval = setInterval(() => {
-        State.timer += 0.1;
-        $('#meter-text').textContent = Math.floor(State.timer) + 's';
-        $('#ring-fill').style.strokeDashoffset = 100.5 * (1 - (State.timer/State.limit));
-        if (State.timer >= State.limit) triggerGuard();
+function startTimer() {
+    if (State.locked) return;
+    clearInterval(State.ticker);
+    State.ticker = setInterval(() => {
+        State.elapsed += 0.1;
+        updateMeter();
+        if (State.elapsed >= State.limit) lock();
     }, 100);
 }
 
-function stopMonitoring() {
-    clearInterval(State.interval);
-    if (!State.locked) { State.timer = 0; $('#ring-fill').style.strokeDashoffset = 100.5; }
+function stopTimer() {
+    clearInterval(State.ticker);
 }
 
-function triggerGuard() {
-    stopMonitoring();
+function updateMeter() {
+    const pct = Math.min(State.elapsed / State.limit, 1);
+    const offset = 97.4 * (1 - pct);
+    $('#ring-fill').style.strokeDashoffset = offset;
+    $('#meter-text').textContent = Math.floor(State.elapsed) + 's';
+}
+
+function lock() {
+    stopTimer();
     State.locked = true;
     $('#guard-overlay').classList.remove('hidden');
-    log("LIMIT_EXCEEDED: Dopamine loop interrupted.");
+    $('#lock-badge').classList.remove('hidden');
 }
 
-function showFeature(f) {
-    $('#guard-menu').classList.add('hidden');
-    $(`#feature-${f}`).classList.remove('hidden');
-}
-
-function resetGuard() {
-    document.querySelectorAll('.guard-content').forEach(c => c.classList.add('hidden'));
-    $('#guard-menu').classList.remove('hidden');
-}
-
-function exitGuard() {
-    State.locked = false; State.timer = 0;
+function unlock(dest) {
+    State.locked = false;
+    State.elapsed = 0;
     $('#guard-overlay').classList.add('hidden');
-    switchTab('feed');
+    $('#lock-badge').classList.add('hidden');
+    updateMeter();
 }
 
-async function askAI(mode) {
-    const input = $(`#${mode}-in`);
-    const display = $(`#${mode}-chat`);
-    if (!input.value) return;
+function handleBot() {
+    const input = $('#user-input');
+    const display = $('#chat-display');
+    const val = input.value.toLowerCase();
+    if (!val) return;
 
-    const u = document.createElement('div');
-    u.className = 'user-msg';
-    u.textContent = input.value;
-    display.appendChild(u);
-    const val = input.value;
+    const uMsg = document.createElement('div');
+    uMsg.className = 'user-msg';
+    uMsg.textContent = input.value;
+    display.appendChild(uMsg);
     input.value = '';
-
-    const b = document.createElement('div');
-    b.className = 'bot-msg';
-    b.textContent = "AI is thinking...";
-    display.appendChild(b);
     display.scrollTop = display.scrollHeight;
 
-    try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ contents: [{ parts: [{ text: val }] }] })
-        });
-        const data = await res.json();
-        b.textContent = data.candidates[0].content.parts[0].text;
-    } catch (e) {
-        b.textContent = mode === 'therapy' ? "Take a breath. You're doing great." : "Focus on the basics of that topic first.";
-    }
-    display.scrollTop = display.scrollHeight;
+    setTimeout(() => {
+        let reply = BotResponses.default;
+        if (val.includes("bore")) reply = BotResponses.bored;
+        if (val.includes("anx") || val.includes("stress")) reply = BotResponses.anxious;
+        if (val.includes("lost")) reply = BotResponses.lost;
+        if (val.includes("help")) reply = BotResponses.help;
+
+        const bMsg = document.createElement('div');
+        bMsg.className = 'bot-msg';
+        bMsg.textContent = reply;
+        display.appendChild(bMsg);
+        display.scrollTop = display.scrollHeight;
+    }, 800);
 }
+
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.go)));
+$('#send-btn').addEventListener('click', handleBot);
+$('#user-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') handleBot(); });
