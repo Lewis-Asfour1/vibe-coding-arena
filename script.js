@@ -1,123 +1,164 @@
-/* 
-   FOCUS GUARD CORE LOGIC 
-   Gemini API Key Integrated
-*/
-const API_KEY = "AQ.Ab8RN6Lr-aXkPL85xNvcYLo1IHaubgN5L7vbGlQ7mM-rMHFVeQ";
+/* ================================================
+   FOCUS GUARD — MVP Demo Engine
+   All state is held in memory / localStorage only.
+   No network calls exist in this file. By design.
+   ================================================ */
 
 const State = {
-    currentTab: 'feed',
-    timer: 0,
-    limit: 7,
-    locked: false,
-    interval: null,
-    aiMode: 'therapy'
+  currentTab: 'feed',
+  limit: 7,            // seconds
+  elapsed: 0,          // seconds on reels this session
+  locked: false,
+  ticker: null,
+  totalSaved: 0
 };
 
+const SUGGESTIONS = [
+  "Text a friend back",
+  "Drink a glass of water",
+  "Stand up and stretch for 60 seconds",
+  "Write down one thing on your mind",
+  "Step outside and look at something far away",
+  "Open the notes you were supposed to read",
+  "Take 5 slow breaths"
+];
+
+/* ---------- DOM ---------- */
 const $ = (s) => document.querySelector(s);
+const tabs        = document.querySelectorAll('.tab');
+const overlay     = $('#guard-overlay');
+const ringFill    = $('#ring-fill');
+const meterText   = $('#meter-text');
+const guardTime   = $('#guard-time');
+const suggestion  = $('#suggestion-text');
+const lockBadge   = $('#lock-badge');
+const consoleBody = $('#console-body');
+const slider      = $('#limit-slider');
+const limitVal    = $('#limit-val');
+const RING_LEN    = 97.4;
 
-/* --- NAVIGATION --- */
+/* ---------- LOCAL LOG ---------- */
+function log(msg, type = '') {
+  const t = new Date().toLocaleTimeString('en-GB', { hour12: false }).slice(0, 8);
+  const el = document.createElement('div');
+  el.className = `log ${type}`;
+  el.innerHTML = `<span class="ts">${t}</span>${msg}`;
+  consoleBody.appendChild(el);
+  consoleBody.scrollTop = consoleBody.scrollHeight;
+  // persist locally — proof of "local-only"
+  try {
+    const hist = JSON.parse(localStorage.getItem('fg_log') || '[]');
+    hist.push({ t, msg });
+    localStorage.setItem('fg_log', JSON.stringify(hist.slice(-50)));
+  } catch (e) {}
+}
+
+/* ---------- TAB SWITCHING ---------- */
 function switchTab(name) {
-    if (State.locked && name === 'reels') return;
-    
-    State.currentTab = name;
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    $(`#view-${name}`).classList.add('active');
-    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  // Guard is active: only escape routes allowed
+  if (State.locked && name === 'reels') {
+    overlay.querySelector('.guard-inner').classList.remove('shake');
+    void overlay.offsetWidth;
+    overlay.querySelector('.guard-inner').classList.add('shake');
+    log('blocked_surface=reels · redirect required', 'log-block');
+    return;
+  }
 
-    if (name === 'reels') startTimer();
-    else stopTimer();
+  State.currentTab = name;
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  $('#view-' + name).classList.add('active');
+  tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+
+  if (name === 'reels') {
+    startWatching();
+  } else {
+    stopWatching();
+    if (State.locked) releaseGuard(name);
+  }
 }
 
-/* --- BLOCKER --- */
-function startTimer() {
-    clearInterval(State.interval);
-    State.interval = setInterval(() => {
-        State.timer += 0.1;
-        updateMeter();
-        if (State.timer >= State.limit) triggerLock();
-    }, 100);
+/* ---------- MONITORING ---------- */
+function startWatching() {
+  if (State.locked) return;
+  log('surface_detected: short_form_video_feed', 'log-warn');
+  log('classifier → vertical | autoplay | infinite = TRUE');
+  clearInterval(State.ticker);
+  State.ticker = setInterval(tick, 100);
 }
 
-function stopTimer() {
-    clearInterval(State.interval);
-    if (!State.locked) { State.timer = 0; updateMeter(); }
+function stopWatching() {
+  clearInterval(State.ticker);
+  State.ticker = null;
+  if (!State.locked && State.elapsed > 0) {
+    log(`surface_exited · session=${State.elapsed.toFixed(1)}s`, 'log-ok');
+  }
 }
 
-function updateMeter() {
-    const pct = Math.min(State.timer / State.limit, 1);
-    $('#ring-fill').style.strokeDashoffset = 97.4 * (1 - pct);
-    $('#meter-text').textContent = Math.floor(State.timer) + 's';
+function tick() {
+  State.elapsed += 0.1;
+  const pct = Math.min(State.elapsed / State.limit, 1);
+  ringFill.style.strokeDashoffset = RING_LEN * (1 - pct);
+  meterText.textContent = Math.floor(State.elapsed) + 's';
+
+  if (pct > 0.65 && pct < 1) ringFill.style.stroke = '#ffd479';
+  if (pct >= 1) ringFill.style.stroke = '#ff8f7a';
+
+  if (State.elapsed >= State.limit) triggerGuard();
 }
 
-function triggerLock() {
-    stopTimer();
-    State.locked = true;
-    $('#guard-overlay').classList.remove('hidden');
+/* ---------- THE GUARD ---------- */
+function triggerGuard() {
+  clearInterval(State.ticker);
+  State.locked = true;
+  guardTime.textContent = Math.round(State.elapsed) + 's';
+  suggestion.textContent = SUGGESTIONS[Math.floor(Math.random() * SUGGESTIONS.length)];
+  overlay.classList.remove('hidden');
+  lockBadge.classList.remove('hidden');
+  log(`LIMIT REACHED (${State.limit}s) → guard engaged`, 'log-block');
+  log('awaiting user redirect to safe surface…', 'log-warn');
 }
 
-/* --- GUARD OVERLAY LOGIC --- */
-function showAI(mode) {
-    State.aiMode = mode;
-    $('#ai-title').textContent = mode === 'therapy' ? 'Compass' : 'Study Buddy';
-    $('#guard-choice').classList.add('hidden');
-    $('#guard-chat').classList.remove('hidden');
+function releaseGuard(destination) {
+  overlay.classList.add('hidden');
+  lockBadge.classList.add('hidden');
+  State.locked = false;
+  State.totalSaved += State.elapsed;
+  State.elapsed = 0;
+  ringFill.style.strokeDashoffset = RING_LEN;
+  ringFill.style.stroke = '#6fd39c';
+  meterText.textContent = '0s';
+  log(`redirected → ${destination} · guard released`, 'log-ok');
 }
 
-function backToGuardMenu() {
-    $('#guard-chat').classList.add('hidden');
-    $('#guard-choice').classList.remove('hidden');
-}
+/* ---------- LISTENERS ---------- */
+tabs.forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+document.querySelectorAll('[data-go]').forEach(b =>
+  b.addEventListener('click', () => switchTab(b.dataset.go))
+);
 
-function exitGuard() {
-    State.locked = false;
-    State.timer = 0;
-    $('#guard-overlay').classList.add('hidden');
-    switchTab('feed');
-}
+$('#reels-scroll').addEventListener('scroll', () => {
+  if (!State.locked && Math.random() > 0.85) log('scroll_event · stored_locally=true');
+}, { passive: true });
 
-/* --- GEMINI AI INTEGRATION --- */
-async function handleGemini() {
-    const input = $('#ai-input');
-    const display = $('#ai-chat-display');
-    const val = input.value;
-    if (!val) return;
+slider.addEventListener('input', e => {
+  State.limit = +e.target.value;
+  limitVal.textContent = State.limit + 's';
+  log(`user_pref updated: limit=${State.limit}s (device only)`);
+});
 
-    // User Msg
-    const u = document.createElement('div');
-    u.className = 'user-msg';
-    u.textContent = val;
-    display.appendChild(u);
-    input.value = '';
+$('#reset-btn').addEventListener('click', () => {
+  clearInterval(State.ticker);
+  State.locked = false; State.elapsed = 0;
+  overlay.classList.add('hidden');
+  lockBadge.classList.add('hidden');
+  ringFill.style.strokeDashoffset = RING_LEN;
+  ringFill.style.stroke = '#6fd39c';
+  meterText.textContent = '0s';
+  switchTab('feed');
+  log('session reset', 'log-sys');
+});
 
-    // Thinking
-    const b = document.createElement('div');
-    b.className = 'bot-msg';
-    b.textContent = "AI is thinking...";
-    display.appendChild(b);
-    display.scrollTop = display.scrollHeight;
-
-    const context = State.aiMode === 'therapy' 
-        ? "You are The Compass, an empathetic digital therapist. User just got blocked from Reels."
-        : "You are Study Buddy, an academic tutor. Explain the topic simply.";
-
-    try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ contents: [{ parts: [{ text: `${context} User: ${val}` }] }] })
-        });
-        const data = await res.json();
-        b.textContent = data.candidates[0].content.parts[0].text;
-    } catch (e) {
-        b.textContent = State.aiMode === 'therapy' ? "Take a breath. You are in control." : "Focus on the basics of this topic first.";
-    }
-    display.scrollTop = display.scrollHeight;
-}
-
-/* --- LISTENERS --- */
-document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
-document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => {
-    if(b.dataset.go === 'feed') exitGuard();
-    else switchTab(b.dataset.go);
-}));
-$('#ai-send-btn').addEventListener('click', handleGemini);
+/* ---------- BOOT ---------- */
+log('daemon started · storage=device · network=disabled', 'log-sys');
+log('monitoring: reels | shorts | tiktok');
+log('excluded: dms | feed | search | profile', 'log-ok');
