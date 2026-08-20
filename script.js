@@ -1,148 +1,123 @@
-/* FOCUS GUARD ENGINE */
+/* 
+   FOCUS GUARD CORE LOGIC 
+   Gemini API Key Integrated
+*/
+const API_KEY = "AQ.Ab8RN6Lr-aXkPL85xNvcYLo1IHaubgN5L7vbGlQ7mM-rMHFVeQ";
 
 const State = {
     currentTab: 'feed',
+    timer: 0,
     limit: 7,
-    elapsed: 0,
     locked: false,
-    ticker: null
-};
-
-const BotResponses = {
-    bored: "Boredom is just your brain asking for real stimulation. Try drinking some water or walking for 2 minutes.",
-    anxious: "When we scroll fast, our heart rate goes up. Take three deep breaths right now. I'm here.",
-    lost: "It's okay to feel lost. The loop is designed to make you forget your goals. What is ONE thing you wanted to do today?",
-    help: "I'm here. You've already done the hardest part: putting the scroll down. How does your body feel?",
-    default: "I hear you. Breaking the digital loop is tough, but you're back in control now. What's one small thing you can do off-screen?"
+    interval: null,
+    aiMode: 'therapy'
 };
 
 const $ = (s) => document.querySelector(s);
 
+/* --- NAVIGATION --- */
 function switchTab(name) {
-    if (State.locked && name === 'reels') {
-        const guardInner = $('.guard-inner');
-        if (guardInner && typeof guardInner.animate === 'function') {
-            guardInner.animate([
-                { transform: 'translateX(-5px)' },
-                { transform: 'translateX(5px)' }
-            ], { duration: 150, direction: 'alternate', iterations: 2 });
-        }
-        return;
-    }
-
+    if (State.locked && name === 'reels') return;
+    
     State.currentTab = name;
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    const view = $(`#view-${name}`);
-    if (view) view.classList.add('active');
+    $(`#view-${name}`).classList.add('active');
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
 
-    document.querySelectorAll('.tab').forEach(t => {
-        t.classList.toggle('active', t.dataset.tab === name);
-    });
-
-    if (name === 'reels') {
-        startTimer();
-    } else {
-        stopTimer();
-        if (State.locked) unlock(name);
-    }
+    if (name === 'reels') startTimer();
+    else stopTimer();
 }
 
+/* --- BLOCKER --- */
 function startTimer() {
-    if (State.locked) return;
-    if (State.ticker) clearInterval(State.ticker);
-    State.ticker = setInterval(() => {
-        // increase elapsed in tenths of a second
-        State.elapsed = Math.min(State.limit, +(State.elapsed + 0.1).toFixed(1));
+    clearInterval(State.interval);
+    State.interval = setInterval(() => {
+        State.timer += 0.1;
         updateMeter();
-        if (State.elapsed >= State.limit) lock();
+        if (State.timer >= State.limit) triggerLock();
     }, 100);
 }
 
 function stopTimer() {
-    if (State.ticker) {
-        clearInterval(State.ticker);
-        State.ticker = null;
-    }
+    clearInterval(State.interval);
+    if (!State.locked) { State.timer = 0; updateMeter(); }
 }
 
 function updateMeter() {
-    const pct = Math.min(State.elapsed / State.limit, 1);
-    const offset = 97.4 * (1 - pct);
-    const ring = $('#ring-fill');
-    if (ring && typeof ring.setAttribute === 'function') {
-        ring.setAttribute('stroke-dashoffset', offset);
-    }
-    const meter = $('#meter-text');
-    if (meter) meter.textContent = Math.floor(State.elapsed) + 's';
+    const pct = Math.min(State.timer / State.limit, 1);
+    $('#ring-fill').style.strokeDashoffset = 97.4 * (1 - pct);
+    $('#meter-text').textContent = Math.floor(State.timer) + 's';
 }
 
-function lock() {
+function triggerLock() {
     stopTimer();
     State.locked = true;
-    const overlay = $('#guard-overlay');
-    const badge = $('#lock-badge');
-    if (overlay) overlay.classList.remove('hidden');
-    if (badge) badge.classList.remove('hidden');
+    $('#guard-overlay').classList.remove('hidden');
 }
 
-function unlock(dest) {
+/* --- GUARD OVERLAY LOGIC --- */
+function showAI(mode) {
+    State.aiMode = mode;
+    $('#ai-title').textContent = mode === 'therapy' ? 'Compass' : 'Study Buddy';
+    $('#guard-choice').classList.add('hidden');
+    $('#guard-chat').classList.remove('hidden');
+}
+
+function backToGuardMenu() {
+    $('#guard-chat').classList.add('hidden');
+    $('#guard-choice').classList.remove('hidden');
+}
+
+function exitGuard() {
     State.locked = false;
-    State.elapsed = 0;
-    const overlay = $('#guard-overlay');
-    const badge = $('#lock-badge');
-    if (overlay) overlay.classList.add('hidden');
-    if (badge) badge.classList.add('hidden');
-    updateMeter();
+    State.timer = 0;
+    $('#guard-overlay').classList.add('hidden');
+    switchTab('feed');
 }
 
-function handleBot() {
-    const input = $('#user-input');
-    const display = $('#chat-display');
-    if (!input || !display) return;
-
-    const val = input.value.trim().toLowerCase();
+/* --- GEMINI AI INTEGRATION --- */
+async function handleGemini() {
+    const input = $('#ai-input');
+    const display = $('#ai-chat-display');
+    const val = input.value;
     if (!val) return;
 
-    const uMsg = document.createElement('div');
-    uMsg.className = 'user-msg';
-    uMsg.textContent = input.value;
-    display.appendChild(uMsg);
+    // User Msg
+    const u = document.createElement('div');
+    u.className = 'user-msg';
+    u.textContent = val;
+    display.appendChild(u);
     input.value = '';
+
+    // Thinking
+    const b = document.createElement('div');
+    b.className = 'bot-msg';
+    b.textContent = "AI is thinking...";
+    display.appendChild(b);
     display.scrollTop = display.scrollHeight;
 
-    setTimeout(() => {
-        let reply = BotResponses.default;
-        if (val.includes('bore')) reply = BotResponses.bored;
-        if (val.includes('anx') || val.includes('stress')) reply = BotResponses.anxious;
-        if (val.includes('lost')) reply = BotResponses.lost;
-        if (val.includes('help')) reply = BotResponses.help;
+    const context = State.aiMode === 'therapy' 
+        ? "You are The Compass, an empathetic digital therapist. User just got blocked from Reels."
+        : "You are Study Buddy, an academic tutor. Explain the topic simply.";
 
-        const bMsg = document.createElement('div');
-        bMsg.className = 'bot-msg';
-        bMsg.textContent = reply;
-        display.appendChild(bMsg);
-        display.scrollTop = display.scrollHeight;
-    }, 800);
+    try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ contents: [{ parts: [{ text: `${context} User: ${val}` }] }] })
+        });
+        const data = await res.json();
+        b.textContent = data.candidates[0].content.parts[0].text;
+    } catch (e) {
+        b.textContent = State.aiMode === 'therapy' ? "Take a breath. You are in control." : "Focus on the basics of this topic first.";
+    }
+    display.scrollTop = display.scrollHeight;
 }
 
-// Initialize once DOM is ready and wire up controls
-document.addEventListener('DOMContentLoaded', () => {
-    // ensure initial meter state
-    updateMeter();
-
-    const tabs = document.querySelectorAll('.tab');
-    if (tabs) tabs.forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
-
-    const goBtns = document.querySelectorAll('[data-go]');
-    if (goBtns) goBtns.forEach(b => b.addEventListener('click', () => switchTab(b.dataset.go)));
-
-    const sendBtn = $('#send-btn');
-    if (sendBtn) sendBtn.addEventListener('click', handleBot);
-
-    const userInput = $('#user-input');
-    if (userInput) userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleBot(); });
-
-    // set initial active tab based on markup
-    const activeTab = document.querySelector('.tab.active');
-    if (activeTab) switchTab(activeTab.dataset.tab || 'feed');
-});
+/* --- LISTENERS --- */
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => {
+    if(b.dataset.go === 'feed') exitGuard();
+    else switchTab(b.dataset.go);
+}));
+$('#ai-send-btn').addEventListener('click', handleGemini);
