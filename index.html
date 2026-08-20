@@ -1,110 +1,198 @@
-/* FOCUS GUARD ENGINE */
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Focus Guard — Protect Your Attention Span</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-const State = {
-    currentTab: 'feed',
-    limit: 7, 
-    elapsed: 0,
-    locked: false,
-    ticker: null
-};
+<!-- ambient background -->
+<div class="aurora">
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+  <div class="grain"></div>
+</div>
 
-const BotResponses = {
-    "bored": "Boredom is just your brain asking for real stimulation. Try drinking some water or walking for 2 minutes.",
-    "anxious": "When we scroll fast, our heart rate goes up. Take three deep breaths right now. I'm here.",
-    "lost": "It's okay to feel lost. The loop is designed to make you forget your goals. What is ONE thing you wanted to do today?",
-    "help": "I'm here. You've already done the hardest part: putting the scroll down. How does your body feel?",
-    "default": "I hear you. Breaking the digital loop is tough, but you're back in control now. What's one small thing you can do off-screen?"
-};
+<!-- ============ NAV ============ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#" class="brand">
+      <span class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </span>
+      <span class="brand-text">Focus<em>Guard</em></span>
+    </a>
+    <div class="nav-links">
+      <a href="#demo">Live Demo</a>
+      <a href="#how">How it works</a>
+      <a href="#privacy">Privacy</a>
+    </div>
+    <a href="#demo" class="btn btn-sm">Try the demo</a>
+  </div>
+</nav>
 
-const $ = (s) => document.querySelector(s);
+<!-- ============ HERO ============ -->
+<header class="hero" id="demo">
+  <div class="hero-grid">
 
-function switchTab(name) {
-    if (State.locked && name === 'reels') {
-        $('.guard-inner').animate([{transform:'translateX(-5px)'},{transform:'translateX(5px)'}], 100);
-        return;
-    }
+    <div class="hero-copy">
+      <div class="pill">
+        <span class="dot"></span> Local-only · Privacy First
+      </div>
 
-    State.currentTab = name;
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    $(`#view-${name}`).classList.add('active');
-    
-    document.querySelectorAll('.tab').forEach(t => {
-        t.classList.toggle('active', t.dataset.tab === name);
-    });
+      <h1>
+        Your attention is
+        <span class="serif-italic">not</span>
+        for sale.
+      </h1>
 
-    if (name === 'reels') {
-        startTimer();
-    } else {
-        stopTimer();
-        if (State.locked) unlock(name);
-    }
-}
+      <p class="lede">
+        Focus Guard sits quietly on your phone and watches one thing only —
+        <strong>short-form video</strong>. When you cross your limit, it helps you step out of the loop and back to reality.
+      </p>
 
-function startTimer() {
-    if (State.locked) return;
-    clearInterval(State.ticker);
-    State.ticker = setInterval(() => {
-        State.elapsed += 0.1;
-        updateMeter();
-        if (State.elapsed >= State.limit) lock();
-    }, 100);
-}
+      <div class="hero-cta">
+        <a href="#phone-anchor" class="btn btn-primary">Scroll the demo →</a>
+        <a href="#how" class="btn btn-ghost">See how it works</a>
+      </div>
 
-function stopTimer() {
-    clearInterval(State.ticker);
-}
+      <div class="hero-stats">
+        <div class="stat"><strong>Surgical</strong><span>Blocks reels only</span></div>
+        <div class="divider"></div>
+        <div class="stat"><strong>Compass</strong><span>AI Guidance</span></div>
+        <div class="divider"></div>
+        <div class="stat"><strong>7s</strong><span>Demo Limit</span></div>
+      </div>
+    </div>
 
-function updateMeter() {
-    const pct = Math.min(State.elapsed / State.limit, 1);
-    const offset = 97.4 * (1 - pct);
-    $('#ring-fill').style.strokeDashoffset = offset;
-    $('#meter-text').textContent = Math.floor(State.elapsed) + 's';
-}
+    <!-- ============ PHONE ============ -->
+    <div class="hero-phone" id="phone-anchor">
+      <div class="phone-glow"></div>
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
 
-function lock() {
-    stopTimer();
-    State.locked = true;
-    $('#guard-overlay').classList.remove('hidden');
-    $('#lock-badge').classList.remove('hidden');
-}
+          <!-- status bar -->
+          <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="12"><path d="M2 22h20V2z"/></svg>
+              <span class="battery"></span>
+            </div>
+          </div>
 
-function unlock(dest) {
-    State.locked = false;
-    State.elapsed = 0;
-    $('#guard-overlay').classList.add('hidden');
-    $('#lock-badge').classList.add('hidden');
-    updateMeter();
-}
+          <!-- ===== GUARD OVERLAY ===== -->
+          <div id="guard-overlay" class="guard hidden">
+            <div class="guard-inner">
+              <div class="guard-orb">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <h2>Time's up on Reels</h2>
+              <p class="guard-sub">You've reached your limit. Let's try something more meaningful.</p>
+              <div class="guard-actions">
+                <button class="guard-btn primary" data-go="therapy">Talk to The Compass</button>
+                <button class="guard-btn" data-go="feed">Back to Feed</button>
+              </div>
+            </div>
+          </div>
 
-function handleBot() {
-    const input = $('#user-input');
-    const display = $('#chat-display');
-    const val = input.value.toLowerCase();
-    if (!val) return;
+          <!-- ===== APP BODY ===== -->
+          <main class="app-body">
+            
+            <!-- FEED -->
+            <section id="view-feed" class="view active">
+              <div class="app-top"><span class="app-title">Feed</span></div>
+              <div class="scroll-area">
+                <div class="story-row">
+                  <div class="story"><div class="ring"></div><span>You</span></div>
+                  <div class="story"><div class="ring r2"></div><span>maya</span></div>
+                  <div class="story"><div class="ring r3"></div><span>omar</span></div>
+                </div>
+                <article class="post">
+                  <div class="post-head"><div class="avatar a1"></div><b>maya.k</b></div>
+                  <div class="post-img p1"></div>
+                  <p class="post-cap">Focusing on deep work today 🌿</p>
+                </article>
+              </div>
+            </section>
 
-    const uMsg = document.createElement('div');
-    uMsg.className = 'user-msg';
-    uMsg.textContent = input.value;
-    display.appendChild(uMsg);
-    input.value = '';
-    display.scrollTop = display.scrollHeight;
+            <!-- REELS -->
+            <section id="view-reels" class="view">
+              <div class="app-top reels-top">
+                <span class="app-title">Reels</span>
+                <div class="attention-meter">
+                  <svg class="ring-svg" viewBox="0 0 36 36">
+                    <circle class="ring-bg" cx="18" cy="18" r="15.5"/>
+                    <circle id="ring-fill" class="ring-fill" cx="18" cy="18" r="15.5"/>
+                  </svg>
+                  <span id="meter-text">0s</span>
+                </div>
+              </div>
+              <div class="reels-scroll" id="reels-scroll">
+                <div class="reel r-a"><div class="reel-meta"><b>@clip.hub</b><p>Infinite Loop...</p></div></div>
+                <div class="reel r-b"><div class="reel-meta"><b>@scroll.daily</b><p>One more video...</p></div></div>
+              </div>
+            </section>
 
-    setTimeout(() => {
-        let reply = BotResponses.default;
-        if (val.includes("bore")) reply = BotResponses.bored;
-        if (val.includes("anx") || val.includes("stress")) reply = BotResponses.anxious;
-        if (val.includes("lost")) reply = BotResponses.lost;
-        if (val.includes("help")) reply = BotResponses.help;
+            <!-- MESSAGES -->
+            <section id="view-messages" class="view">
+              <div class="app-top"><span class="app-title">Messages</span></div>
+              <div class="scroll-area">
+                <div class="dm"><div class="avatar a1"></div><div class="dm-txt"><b>Maya</b><span>Did you see the notes?</span></div></div>
+                <div class="dm"><div class="avatar a2"></div><div class="dm-txt"><b>Omar</b><span>Study session at 5?</span></div></div>
+              </div>
+            </section>
 
-        const bMsg = document.createElement('div');
-        bMsg.className = 'bot-msg';
-        bMsg.textContent = reply;
-        display.appendChild(bMsg);
-        display.scrollTop = display.scrollHeight;
-    }, 800);
-}
+            <!-- COMPASS (THERAPY) -->
+            <section id="view-therapy" class="view">
+                <div class="app-top bot-top"><span class="app-title">The Compass</span></div>
+                <div class="chat-area" id="chat-display">
+                    <div class="bot-msg">Welcome back to reality. You just stepped out of the scroll loop. How does your mind feel right now?</div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" id="user-input" placeholder="How are you feeling?">
+                    <button id="send-btn">Send</button>
+                </div>
+            </section>
 
-document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
-document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.go)));
-$('#send-btn').addEventListener('click', handleBot);
-$('#user-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') handleBot(); });
+          </main>
+
+          <!-- ===== TABBAR ===== -->
+          <nav class="tabbar">
+            <button class="tab active" data-tab="feed">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+              <span>Home</span>
+            </button>
+            <button class="tab" data-tab="reels">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
+              <span>Reels</span>
+              <i class="lock-badge hidden" id="lock-badge">🔒</i>
+            </button>
+            <button class="tab" data-tab="messages">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+              <span>DMs</span>
+            </button>
+            <button class="tab" data-tab="therapy">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M16.2 7.8l-2 5.6-5.6 2 2-5.6 5.6-2z"/></svg>
+              <span>Compass</span>
+            </button>
+          </nav>
+
+        </div>
+      </div>
+      <p class="phone-hint">↑ Tap <b>Reels</b> and scroll for 7s.</p>
+    </div>
+  </div>
+</header>
+
+<script src="script.js"></script>
+</body>
+</html>
