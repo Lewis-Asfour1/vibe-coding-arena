@@ -1,164 +1,110 @@
-/* ================================================
-   FOCUS GUARD — MVP Demo Engine
-   All state is held in memory / localStorage only.
-   No network calls exist in this file. By design.
-   ================================================ */
+/* FOCUS GUARD ENGINE */
 
 const State = {
-  currentTab: 'feed',
-  limit: 7,            // seconds
-  elapsed: 0,          // seconds on reels this session
-  locked: false,
-  ticker: null,
-  totalSaved: 0
+    currentTab: 'feed',
+    limit: 7, 
+    elapsed: 0,
+    locked: false,
+    ticker: null
 };
 
-const SUGGESTIONS = [
-  "Text a friend back",
-  "Drink a glass of water",
-  "Stand up and stretch for 60 seconds",
-  "Write down one thing on your mind",
-  "Step outside and look at something far away",
-  "Open the notes you were supposed to read",
-  "Take 5 slow breaths"
-];
+const BotResponses = {
+    "bored": "Boredom is just your brain asking for real stimulation. Try drinking some water or walking for 2 minutes.",
+    "anxious": "When we scroll fast, our heart rate goes up. Take three deep breaths right now. I'm here.",
+    "lost": "It's okay to feel lost. The loop is designed to make you forget your goals. What is ONE thing you wanted to do today?",
+    "help": "I'm here. You've already done the hardest part: putting the scroll down. How does your body feel?",
+    "default": "I hear you. Breaking the digital loop is tough, but you're back in control now. What's one small thing you can do off-screen?"
+};
 
-/* ---------- DOM ---------- */
 const $ = (s) => document.querySelector(s);
-const tabs        = document.querySelectorAll('.tab');
-const overlay     = $('#guard-overlay');
-const ringFill    = $('#ring-fill');
-const meterText   = $('#meter-text');
-const guardTime   = $('#guard-time');
-const suggestion  = $('#suggestion-text');
-const lockBadge   = $('#lock-badge');
-const consoleBody = $('#console-body');
-const slider      = $('#limit-slider');
-const limitVal    = $('#limit-val');
-const RING_LEN    = 97.4;
 
-/* ---------- LOCAL LOG ---------- */
-function log(msg, type = '') {
-  const t = new Date().toLocaleTimeString('en-GB', { hour12: false }).slice(0, 8);
-  const el = document.createElement('div');
-  el.className = `log ${type}`;
-  el.innerHTML = `<span class="ts">${t}</span>${msg}`;
-  consoleBody.appendChild(el);
-  consoleBody.scrollTop = consoleBody.scrollHeight;
-  // persist locally — proof of "local-only"
-  try {
-    const hist = JSON.parse(localStorage.getItem('fg_log') || '[]');
-    hist.push({ t, msg });
-    localStorage.setItem('fg_log', JSON.stringify(hist.slice(-50)));
-  } catch (e) {}
-}
-
-/* ---------- TAB SWITCHING ---------- */
 function switchTab(name) {
-  // Guard is active: only escape routes allowed
-  if (State.locked && name === 'reels') {
-    overlay.querySelector('.guard-inner').classList.remove('shake');
-    void overlay.offsetWidth;
-    overlay.querySelector('.guard-inner').classList.add('shake');
-    log('blocked_surface=reels · redirect required', 'log-block');
-    return;
-  }
+    if (State.locked && name === 'reels') {
+        $('.guard-inner').animate([{transform:'translateX(-5px)'},{transform:'translateX(5px)'}], 100);
+        return;
+    }
 
-  State.currentTab = name;
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  $('#view-' + name).classList.add('active');
-  tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+    State.currentTab = name;
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    $(`#view-${name}`).classList.add('active');
+    
+    document.querySelectorAll('.tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.tab === name);
+    });
 
-  if (name === 'reels') {
-    startWatching();
-  } else {
-    stopWatching();
-    if (State.locked) releaseGuard(name);
-  }
+    if (name === 'reels') {
+        startTimer();
+    } else {
+        stopTimer();
+        if (State.locked) unlock(name);
+    }
 }
 
-/* ---------- MONITORING ---------- */
-function startWatching() {
-  if (State.locked) return;
-  log('surface_detected: short_form_video_feed', 'log-warn');
-  log('classifier → vertical | autoplay | infinite = TRUE');
-  clearInterval(State.ticker);
-  State.ticker = setInterval(tick, 100);
+function startTimer() {
+    if (State.locked) return;
+    clearInterval(State.ticker);
+    State.ticker = setInterval(() => {
+        State.elapsed += 0.1;
+        updateMeter();
+        if (State.elapsed >= State.limit) lock();
+    }, 100);
 }
 
-function stopWatching() {
-  clearInterval(State.ticker);
-  State.ticker = null;
-  if (!State.locked && State.elapsed > 0) {
-    log(`surface_exited · session=${State.elapsed.toFixed(1)}s`, 'log-ok');
-  }
+function stopTimer() {
+    clearInterval(State.ticker);
 }
 
-function tick() {
-  State.elapsed += 0.1;
-  const pct = Math.min(State.elapsed / State.limit, 1);
-  ringFill.style.strokeDashoffset = RING_LEN * (1 - pct);
-  meterText.textContent = Math.floor(State.elapsed) + 's';
-
-  if (pct > 0.65 && pct < 1) ringFill.style.stroke = '#ffd479';
-  if (pct >= 1) ringFill.style.stroke = '#ff8f7a';
-
-  if (State.elapsed >= State.limit) triggerGuard();
+function updateMeter() {
+    const pct = Math.min(State.elapsed / State.limit, 1);
+    const offset = 97.4 * (1 - pct);
+    $('#ring-fill').style.strokeDashoffset = offset;
+    $('#meter-text').textContent = Math.floor(State.elapsed) + 's';
 }
 
-/* ---------- THE GUARD ---------- */
-function triggerGuard() {
-  clearInterval(State.ticker);
-  State.locked = true;
-  guardTime.textContent = Math.round(State.elapsed) + 's';
-  suggestion.textContent = SUGGESTIONS[Math.floor(Math.random() * SUGGESTIONS.length)];
-  overlay.classList.remove('hidden');
-  lockBadge.classList.remove('hidden');
-  log(`LIMIT REACHED (${State.limit}s) → guard engaged`, 'log-block');
-  log('awaiting user redirect to safe surface…', 'log-warn');
+function lock() {
+    stopTimer();
+    State.locked = true;
+    $('#guard-overlay').classList.remove('hidden');
+    $('#lock-badge').classList.remove('hidden');
 }
 
-function releaseGuard(destination) {
-  overlay.classList.add('hidden');
-  lockBadge.classList.add('hidden');
-  State.locked = false;
-  State.totalSaved += State.elapsed;
-  State.elapsed = 0;
-  ringFill.style.strokeDashoffset = RING_LEN;
-  ringFill.style.stroke = '#6fd39c';
-  meterText.textContent = '0s';
-  log(`redirected → ${destination} · guard released`, 'log-ok');
+function unlock(dest) {
+    State.locked = false;
+    State.elapsed = 0;
+    $('#guard-overlay').classList.add('hidden');
+    $('#lock-badge').classList.add('hidden');
+    updateMeter();
 }
 
-/* ---------- LISTENERS ---------- */
-tabs.forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
-document.querySelectorAll('[data-go]').forEach(b =>
-  b.addEventListener('click', () => switchTab(b.dataset.go))
-);
+function handleBot() {
+    const input = $('#user-input');
+    const display = $('#chat-display');
+    const val = input.value.toLowerCase();
+    if (!val) return;
 
-$('#reels-scroll').addEventListener('scroll', () => {
-  if (!State.locked && Math.random() > 0.85) log('scroll_event · stored_locally=true');
-}, { passive: true });
+    const uMsg = document.createElement('div');
+    uMsg.className = 'user-msg';
+    uMsg.textContent = input.value;
+    display.appendChild(uMsg);
+    input.value = '';
+    display.scrollTop = display.scrollHeight;
 
-slider.addEventListener('input', e => {
-  State.limit = +e.target.value;
-  limitVal.textContent = State.limit + 's';
-  log(`user_pref updated: limit=${State.limit}s (device only)`);
-});
+    setTimeout(() => {
+        let reply = BotResponses.default;
+        if (val.includes("bore")) reply = BotResponses.bored;
+        if (val.includes("anx") || val.includes("stress")) reply = BotResponses.anxious;
+        if (val.includes("lost")) reply = BotResponses.lost;
+        if (val.includes("help")) reply = BotResponses.help;
 
-$('#reset-btn').addEventListener('click', () => {
-  clearInterval(State.ticker);
-  State.locked = false; State.elapsed = 0;
-  overlay.classList.add('hidden');
-  lockBadge.classList.add('hidden');
-  ringFill.style.strokeDashoffset = RING_LEN;
-  ringFill.style.stroke = '#6fd39c';
-  meterText.textContent = '0s';
-  switchTab('feed');
-  log('session reset', 'log-sys');
-});
+        const bMsg = document.createElement('div');
+        bMsg.className = 'bot-msg';
+        bMsg.textContent = reply;
+        display.appendChild(bMsg);
+        display.scrollTop = display.scrollHeight;
+    }, 800);
+}
 
-/* ---------- BOOT ---------- */
-log('daemon started · storage=device · network=disabled', 'log-sys');
-log('monitoring: reels | shorts | tiktok');
-log('excluded: dms | feed | search | profile', 'log-ok');
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.go)));
+$('#send-btn').addEventListener('click', handleBot);
+$('#user-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') handleBot(); });
