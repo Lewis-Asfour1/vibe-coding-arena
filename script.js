@@ -1,165 +1,145 @@
 /* 
-   FOCUS GUARD CORE ENGINE
-   Contest Build - Gemini AI Powered
+   FOCUS GUARD — GEMINI CORE
+   Contest Build v1.0
 */
 
 const API_KEY = "AQ.Ab8RN6Lr-aXkPL85xNvcYLo1IHaubgN5L7vbGlQ7mM-rMHFVeQ";
 
 const State = {
-    view: 'home',
-    reelsTimer: 0,
+    activeTab: 'home',
+    timer: 0,
     limit: 7,
-    isGuardActive: false,
-    monitorInterval: null,
-    studyInterval: null,
-    studySeconds: 25 * 60
+    isBlocked: false,
+    interval: null,
+    pomoSeconds: 25 * 60,
+    pomoInterval: null
 };
 
 const $ = (s) => document.querySelector(s);
 
-function addLog(message) {
-    const box = $('#log-content');
+function log(msg) {
+    const box = $('#log-output');
     const line = document.createElement('div');
-    line.className = 'log-line';
-    line.textContent = `> [${new Date().toLocaleTimeString()}] ${message}`;
+    line.textContent = `> [${new Date().toLocaleTimeString()}] ${msg}`;
     box.appendChild(line);
     box.scrollTop = box.scrollHeight;
 }
 
-/* --- APP NAVIGATION --- */
-function navigate(tabName) {
-    if (State.isGuardActive && tabName === 'reels') {
-        addLog("BLOCKED: Focus Guard prevents re-entry to dopamine loops.");
+/* --- TABS --- */
+function changeTab(tabName) {
+    if (State.isBlocked && tabName === 'reels') {
+        log("BLOCKED: Attention threshold exceeded. Redirect to Study/Compass.");
         return;
     }
 
-    State.view = tabName;
+    State.activeTab = tabName;
     document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
     $(`#view-${tabName}`).classList.add('active');
     
-    document.querySelectorAll('.tab-btn').forEach(btn => {
+    document.querySelectorAll('.tab-item').forEach(btn => {
         btn.classList.toggle('active', btn.textContent.toLowerCase() === tabName);
     });
 
-    if (tabName === 'reels') startMonitoring();
-    else stopMonitoring();
+    if (tabName === 'reels') startReelsMonitor();
+    else stopReelsMonitor();
 }
 
-/* --- REELS MONITORING --- */
-function startMonitoring() {
-    addLog("Monitoring active. Short-form classifier: ACTIVE.");
-    clearInterval(State.monitorInterval);
-    State.monitorInterval = setInterval(() => {
-        State.reelsTimer += 0.1;
-        updateMeter();
-        if (State.reelsTimer >= State.limit) {
-            triggerGuard();
-        }
+/* --- TIMER --- */
+function startReelsMonitor() {
+    log("Reels activity detected. Monitoring dopamine loops...");
+    clearInterval(State.interval);
+    State.interval = setInterval(() => {
+        State.timer += 0.1;
+        updateUI();
+        if (State.timer >= State.limit) triggerGuard();
     }, 100);
 }
 
-function stopMonitoring() {
-    clearInterval(State.monitorInterval);
-    if (!State.isGuardActive) {
-        State.reelsTimer = 0;
-        updateMeter();
+function stopReelsMonitor() {
+    clearInterval(State.interval);
+    if (!State.isBlocked) {
+        State.timer = 0;
+        updateUI();
     }
 }
 
-function updateMeter() {
-    const pct = Math.min(State.reelsTimer / State.limit, 1);
-    $('#ring-progress').style.strokeDashoffset = 100.5 * (1 - pct);
-    $('#ring-label').textContent = Math.floor(State.reelsTimer) + 's';
+function updateUI() {
+    const pct = Math.min(State.timer / State.limit, 1);
+    $('#ring-fill').style.strokeDashoffset = 100.5 * (1 - pct);
+    $('#ring-text').textContent = Math.floor(State.timer) + 's';
 }
 
 function triggerGuard() {
-    stopMonitoring();
-    State.isGuardActive = true;
+    stopReelsMonitor();
+    State.isBlocked = true;
     $('#guard-overlay').classList.remove('hidden');
-    addLog("INTERVENTION: 7-second dopamine threshold exceeded.");
+    log("INTERVENTION: 7-second limit reached. Guard engaged.");
 }
 
-/* --- GUARD UI --- */
-function showGuardFeature(feat) {
-    document.querySelectorAll('.guard-view').forEach(v => v.classList.add('hidden'));
+/* --- GUARD --- */
+function openGuardFeature(feat) {
+    document.querySelectorAll('.guard-pane').forEach(p => p.classList.add('hidden'));
     $(`#guard-${feat}`).classList.remove('hidden');
     if (feat === 'study') startPomodoro();
 }
 
-function returnToMenu() {
-    document.querySelectorAll('.guard-view').forEach(v => v.classList.add('hidden'));
+function backToGuardMenu() {
+    document.querySelectorAll('.guard-pane').forEach(p => p.classList.add('hidden'));
     $('#guard-menu').classList.remove('hidden');
 }
 
-function deactivateGuard() {
-    State.isGuardActive = false;
-    State.reelsTimer = 0;
+function exitGuard() {
+    State.isBlocked = false;
+    State.timer = 0;
+    updateUI();
     $('#guard-overlay').classList.add('hidden');
-    updateMeter();
-    navigate('home');
-    addLog("Session reset. Pivot successful.");
+    changeTab('home');
+    log("Session successful. Attention reclaimed.");
 }
 
-/* --- GEMINI AI SYSTEM --- */
-async function callGemini(userInput, type) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
-    
-    const prompt = type === 'therapy' 
-        ? `You are The Compass, a wellbeing coach. User is anxious/distracted. User says: "${userInput}". Give a calm 2-sentence reply and one off-screen task.`
-        : `You are Study Buddy. User wants to learn: "${userInput}". Explain in 3 tiny bullets and ask one quiz question.`;
-
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-        });
-        const data = await response.json();
-        return data.candidates[0].content.parts[0].text;
-    } catch (e) {
-        // Fallback simulated AI if key fails
-        return type === 'therapy' 
-            ? "Take a deep breath. Focus on what's around you, not the screen. Try drinking some water." 
-            : "I've broken that down for you. Focus on the core definition first, then the evidence. Ready to quiz?";
-    }
-}
-
-async function sendToAI(mode) {
+/* --- GEMINI AI --- */
+async function sendGemini(mode) {
     const input = $(`#${mode}-input`);
     const display = $(`#${mode}-chat`);
-    const val = input.value;
-    if (!val) return;
+    if (!input.value) return;
 
-    // Add User Bubble
     const u = document.createElement('div');
     u.className = 'user-bubble';
-    u.textContent = val;
+    u.textContent = input.value;
     display.appendChild(u);
+    const val = input.value;
     input.value = '';
 
-    // Add Thinking Bubble
     const b = document.createElement('div');
     b.className = 'bot-bubble';
     b.textContent = "AI is thinking...";
     display.appendChild(b);
     display.scrollTop = display.scrollHeight;
 
-    const result = await callGemini(val, mode);
-    b.innerHTML = result.replace(/\n/g, '<br>');
+    try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: `Act as a ${mode === 'therapy' ? 'wellbeing coach' : 'tutor'}. Topic: ${val}` }] }]
+            })
+        });
+        const data = await response.json();
+        b.innerHTML = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
+    } catch (e) {
+        b.textContent = "Take a breath. Reclaiming your time is the real win today.";
+    }
     display.scrollTop = display.scrollHeight;
 }
 
-/* --- POMODORO --- */
 function startPomodoro() {
-    clearInterval(State.studyInterval);
-    State.studyInterval = setInterval(() => {
-        State.studySeconds--;
-        const m = Math.floor(State.studySeconds / 60);
-        const s = State.studySeconds % 60;
+    clearInterval(State.pomoInterval);
+    State.pomoInterval = setInterval(() => {
+        State.pomoSeconds--;
+        const m = Math.floor(State.pomoSeconds / 60);
+        const s = State.pomoSeconds % 60;
         $('#study-timer').textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
-        if (State.studySeconds <= 0) {
-            clearInterval(State.studyInterval);
-            addLog("FOCUS_COMPLETE: You reached your goal.");
-        }
+        if (State.pomoSeconds <= 0) clearInterval(State.pomoInterval);
     }, 1000);
 }
