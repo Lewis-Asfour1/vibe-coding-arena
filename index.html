@@ -1,175 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Focus Guard | Contest MVP</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Focus Guard — Reclaim Your Mind</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- Premium Aurora Background -->
-<div class="aurora-bg">
-    <div class="blob b1"></div>
-    <div class="blob b2"></div>
-    <div class="blob b3"></div>
-    <div class="grain"></div>
+<!-- THE ORIGINAL PREMIUM AURORA BACKGROUND -->
+<div class="aurora">
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+  <div class="grain"></div>
 </div>
 
-<nav class="navbar">
-    <div class="nav-content">
-        <div class="brand">
-            <div class="logo-sq">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            </div>
-            <span>Focus<em>Guard</em></span>
-        </div>
-        <div class="links">
-            <a href="#how">Process</a>
-            <a href="#privacy">Privacy</a>
-            <button class="nav-btn" onclick="document.getElementById('hero').scrollIntoView({behavior:'smooth'})">Try Demo</button>
-        </div>
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#" class="brand">
+      <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+      <span class="brand-text">Focus<em>Guard</em></span>
+    </a>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#privacy">Privacy</a>
     </div>
+    <a href="#demo" class="btn btn-sm">Try the demo</a>
+  </div>
 </nav>
 
-<section class="hero" id="hero">
-    <div class="hero-container">
-        <div class="hero-info">
-            <div class="pill">Gemini AI Integrated</div>
-            <h1>Your attention is <span class="italic">not</span> for sale.</h1>
-            <p class="description">Focus Guard is a surgical tool to break dopamine loops. We monitor your scroll, and when it becomes toxic, we help you pivot to productivity.</p>
-            
-            <div class="stats-row">
-                <div class="stat"><strong>Gemini AI</strong><span>Buddy</span></div>
-                <div class="divider"></div>
-                <div class="stat"><strong>7 Seconds</strong><span>Limit</span></div>
-                <div class="divider"></div>
-                <div class="stat"><strong>Local</strong><span>Only</span></div>
-            </div>
-        </div>
+<header class="hero" id="demo">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <div class="pill"><span class="dot"></span> Gemini AI Integrated</div>
+      <h1>Your attention is <span class="serif-italic">not</span> for sale.</h1>
+      <p class="lede">Focus Guard is a surgical intervention. We monitor your scroll, and when the dopamine loop becomes toxic, we help you pivot to productivity.</p>
+      
+      <div class="hero-cta">
+        <a href="#phone-anchor" class="btn btn-primary">Scroll the demo →</a>
+      </div>
+      
+      <div class="hero-stats">
+        <div class="stat"><strong>Gemini AI</strong><span>Buddy</span></div>
+        <div class="divider"></div>
+        <div class="stat"><strong>7 Seconds</strong><span>Limit</span></div>
+      </div>
+    </div>
 
-        <div class="phone-area">
-            <div class="phone-glow"></div>
-            <div class="phone-frame">
-                <div class="notch"></div>
-                <div class="phone-screen">
-                    
-                    <!-- System Bar -->
-                    <div class="system-bar">
-                        <span>9:41</span>
-                        <span>📶 🔋</span>
-                    </div>
+    <!-- THE SMARTPHONE (Checkpoint 1 Styling) -->
+    <div class="hero-phone" id="phone-anchor">
+      <div class="phone-glow"></div>
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="status-bar"><span>9:41</span><span>🔋</span></div>
 
-                    <!-- GUARD TAKEOVER OVERLAY -->
-                    <div id="guard-overlay" class="guard-overlay hidden">
-                        <div id="guard-menu" class="guard-pane">
-                            <div class="guard-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-                            <h2>Loop Paused</h2>
-                            <p>You've scrolled for 7 seconds. Pivot now:</p>
-                            <div class="guard-btns">
-                                <button class="g-btn primary" onclick="openGuardFeature('study')">Study Buddy (AI)</button>
-                                <button class="g-btn" onclick="openGuardFeature('therapy')">Compass (AI)</button>
-                                <button class="g-btn ghost" onclick="exitGuard()">Back to Feed</button>
-                            </div>
-                        </div>
-
-                        <!-- Therapy View -->
-                        <div id="guard-therapy" class="guard-pane hidden">
-                            <div class="pane-head"><button onclick="backToGuardMenu()">←</button> <span>Compass AI</span></div>
-                            <div class="chat-window" id="therapy-chat">
-                                <div class="bot-bubble">I'm here. How are you feeling right now?</div>
-                            </div>
-                            <div class="chat-input-row">
-                                <input type="text" id="therapy-input" placeholder="Talk to me...">
-                                <button onclick="sendGemini('therapy')">Send</button>
-                            </div>
-                        </div>
-
-                        <!-- Study View -->
-                        <div id="guard-study" class="guard-pane hidden">
-                            <div class="pane-head"><button onclick="backToGuardMenu()">←</button> <span>Study Buddy</span></div>
-                            <div class="pomodoro-timer" id="study-timer">25:00</div>
-                            <div class="chat-window" id="study-chat">
-                                <div class="bot-bubble">What topic are we focusing on?</div>
-                            </div>
-                            <div class="chat-input-row">
-                                <input type="text" id="study-input" placeholder="Topic: e.g. Biology">
-                                <button onclick="sendGemini('study')">Ask</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- SOCIAL APP CONTENT -->
-                    <div class="app-container">
-                        <div id="view-home" class="app-view active">
-                            <div class="view-title">Home Feed</div>
-                            <div class="view-scroll">
-                                <div class="stories-row"><div class="story"></div><div class="story"></div><div class="story"></div></div>
-                                <div class="post-placeholder"></div>
-                                <div class="post-placeholder"></div>
-                            </div>
-                        </div>
-
-                        <div id="view-reels" class="app-view">
-                            <div class="view-title reels-header">
-                                <span>Reels</span>
-                                <div class="ring-timer">
-                                    <svg viewBox="0 0 36 36" class="ring-svg">
-                                        <circle class="r-track" cx="18" cy="18" r="16"></circle>
-                                        <circle id="ring-fill" class="r-fill" cx="18" cy="18" r="16"></circle>
-                                    </svg>
-                                    <span id="ring-text">0s</span>
-                                </div>
-                            </div>
-                            <div class="reels-scroll">
-                                <div class="reel-item">Short Video Content</div>
-                                <div class="reel-item alternate">Infinite Scrolling...</div>
-                            </div>
-                        </div>
-
-                        <div id="view-dms" class="app-view">
-                            <div class="view-title">Messages</div>
-                            <div class="view-scroll">
-                                <div class="msg-card"><b>Omar</b><span>Focus Guard is ready!</span></div>
-                                <div class="msg-card"><b>Maya</b><span>Did you finish the task?</span></div>
-                            </div>
-                        </div>
-
-                        <nav class="app-tabs">
-                            <button class="tab-item active" onclick="changeTab('home')">Home</button>
-                            <button class="tab-item" onclick="changeTab('reels')">Reels</button>
-                            <button class="tab-item" onclick="changeTab('dms')">DMs</button>
-                        </nav>
-                    </div>
-
+          <!-- THE FOCUS GUARD TAKEOVER (Hidden until 7s) -->
+          <div id="guard-overlay" class="guard-view hidden">
+            <div id="guard-menu" class="guard-pane">
+                <div class="guard-orb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+                <h2>Limit Reached</h2>
+                <p>Choose a better path:</p>
+                <div class="guard-actions">
+                  <button class="g-btn primary" onclick="openGuardFeature('study')">Study Buddy (AI)</button>
+                  <button class="g-btn" onclick="openGuardFeature('therapy')">The Compass (AI)</button>
+                  <button class="g-btn ghost" onclick="exitGuard()">Exit to Feed</button>
                 </div>
             </div>
-            <p class="demo-hint">↑ Tap <b>Reels</b> and wait 7s</p>
+
+            <!-- Compass AI -->
+            <div id="guard-therapy" class="guard-pane hidden">
+                <div class="pane-head"><button onclick="backToGuardMenu()">←</button> <span>Compass</span></div>
+                <div class="chat-area" id="therapy-chat">
+                    <div class="bot-msg">How are you feeling right now? Transitioning can be hard.</div>
+                </div>
+                <div class="chat-input-row">
+                    <input type="text" id="therapy-input" placeholder="Talk to me...">
+                    <button onclick="sendGemini('therapy')">Send</button>
+                </div>
+            </div>
+
+            <!-- Study Buddy -->
+            <div id="guard-study" class="guard-pane hidden">
+                <div class="pane-head"><button onclick="backToGuardMenu()">←</button> <span>Study</span></div>
+                <div class="pomodoro-timer" id="study-timer">25:00</div>
+                <div class="chat-area" id="study-chat">
+                    <div class="bot-msg">What are we learning? I'll use Gemini to simplify it.</div>
+                </div>
+                <div class="chat-input-row">
+                    <input type="text" id="study-input" placeholder="Topic...">
+                    <button onclick="sendGemini('study')">Ask</button>
+                </div>
+            </div>
+          </div>
+
+          <!-- SOCIAL APP CONTENT (Realistic 3 Tabs) -->
+          <main class="app-body">
+            <section id="view-feed" class="view active">
+              <div class="app-top"><span>Home</span></div>
+              <div class="scroll-area">
+                <div class="story-row"><div class="story"></div><div class="story"></div><div class="story"></div></div>
+                <div class="post-item"></div>
+                <div class="post-item"></div>
+              </div>
+            </section>
+
+            <section id="view-reels" class="view">
+              <div class="app-top reels-top">
+                <span>Reels</span>
+                <div class="meter-box">
+                    <svg viewBox="0 0 36 36" class="ring-svg"><circle class="r-track" cx="18" cy="18" r="16"/><circle id="ring-fill" class="r-fill" cx="18" cy="18" r="16"/></svg>
+                    <span id="meter-text">0s</span>
+                </div>
+              </div>
+              <div class="reels-scroll">
+                <div class="reel v1">Infinite Feed</div>
+                <div class="reel v2">Scrolling...</div>
+              </div>
+            </section>
+
+            <section id="view-messages" class="view">
+              <div class="app-top"><span>Messages</span></div>
+              <div class="scroll-area">
+                <div class="dm"><b>Omar:</b> Focus session ready?</div>
+              </div>
+            </section>
+          </main>
+
+          <nav class="tabbar">
+            <button class="tab active" onclick="switchTab('feed')">Home</button>
+            <button class="tab" onclick="switchTab('reels')">Reels</button>
+            <button class="tab" onclick="switchTab('messages')">DMs</button>
+          </nav>
         </div>
+      </div>
+      <p class="hint">↑ Tap Reels and wait 7s</p>
     </div>
-</section>
+  </div>
+</header>
 
-<!-- Additional sections to ensure website is scrollable -->
-<section class="content-section" id="how">
-    <div class="section-inner">
+<section class="section" id="how">
+    <div class="inner">
         <h2>Surgical Intervention</h2>
-        <p>Other blockers kill the whole app. Focus Guard only targets the <strong>addictive dopamine loops</strong>. You keep your DMs and your Feed; you lose the addiction.</p>
-    </div>
-</section>
-
-<section class="content-section" id="privacy">
-    <div class="section-inner">
-        <h2>Local-Only Privacy</h2>
-        <p>Focus Guard stores <strong>zero</strong> data on the cloud. All scroll tracking and Gemini interactions stay within your browser's local memory. You own your data.</p>
+        <p>Other blockers kill the whole app. Focus Guard targets the <strong>addictive dopamine loops</strong>. You keep your DMs; you lose the addiction.</p>
     </div>
 </section>
 
 <footer class="footer">
-    <div class="console-box">
-        <div class="c-header"><div class="dots"><span class="dr"></span><span class="dy"></span><span class="dg"></span></div> focusguard_v1.0.0_logs</div>
+    <div class="console">
+        <div class="c-head">focusguard_internal_logs</div>
         <div id="log-output" class="c-body">> System Online...</div>
     </div>
 </footer>
