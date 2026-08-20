@@ -27,7 +27,8 @@
     </a>
     <div class="nav-links">
       <a href="#demo">Live Demo</a>
-      <a href="#how">Privacy-First</a>
+      <a href="#how">How it works</a>
+      <a href="#privacy">Privacy</a>
     </div>
     <a href="#demo" class="btn btn-sm">Try the demo</a>
   </div>
@@ -38,17 +39,24 @@
     <div class="hero-copy">
       <div class="pill"><span class="dot"></span> Local-only · Privacy First</div>
       <h1>Your attention is <span class="serif-italic">not</span> for sale.</h1>
-      <p class="lede">Focus Guard is your surgical tool to end doom-scrolling. When the Reels loop traps you, we provide a way out.</p>
+      <p class="lede">Focus Guard helps you break the dopamine loop. When you cross your limit on Reels, we provide a calm transition back to real life.</p>
+      
+      <div class="hero-cta">
+        <a href="#phone-anchor" class="btn btn-primary">Scroll the demo →</a>
+      </div>
       
       <div class="hero-stats">
-        <div class="stat"><strong>7s</strong><span>Demo Limit</span></div>
+        <div class="stat"><strong>Surgical</strong><span>Blocks reels only</span></div>
         <div class="divider"></div>
-        <div class="stat"><strong>Compass</strong><span>AI Therapy</span></div>
+        <div class="stat"><strong>Compass</strong><span>AI Guidance</span></div>
+        <div class="divider"></div>
+        <div class="stat"><strong>7s</strong><span>Demo Limit</span></div>
       </div>
     </div>
 
     <!-- PHONE UI -->
     <div class="hero-phone" id="phone-anchor">
+      <div class="phone-glow"></div>
       <div class="phone-frame">
         <div class="phone-notch"></div>
         <div class="phone-screen">
@@ -59,10 +67,10 @@
             <div class="guard-inner">
               <div class="guard-orb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
               <h2>Time's up.</h2>
-              <p class="guard-sub">The loop has ended. How about we try something more meaningful?</p>
+              <p class="guard-sub">The scroll loop has ended. Let's find a better way to spend the next minute.</p>
               <div class="guard-actions">
                 <button class="guard-btn primary" data-go="therapy">Talk to The Compass</button>
-                <button class="guard-btn" data-go="feed">Back to Home Feed</button>
+                <button class="guard-btn" data-go="feed">Back to Feed</button>
               </div>
             </div>
           </div>
@@ -72,8 +80,14 @@
             <section id="view-feed" class="view active">
               <div class="app-top"><span class="app-title">Feed</span></div>
               <div class="scroll-area">
-                <div class="post" style="height:180px; background:#eef2ee; margin:15px; border-radius:12px;"></div>
-                <div class="post" style="height:180px; background:#eef2ee; margin:15px; border-radius:12px;"></div>
+                <div class="post">
+                    <div class="post-head"><div class="avatar a1"></div><b>maya.k</b></div>
+                    <div class="post-img p1"></div>
+                </div>
+                <div class="post">
+                    <div class="post-head"><div class="avatar a2"></div><b>omar.dev</b></div>
+                    <div class="post-img p2"></div>
+                </div>
               </div>
             </section>
 
@@ -90,9 +104,8 @@
                 </div>
               </div>
               <div class="reels-scroll" id="reels-scroll">
-                <div class="reel r-a"><span>Scrolling...</span></div>
-                <div class="reel r-b"><span>Dopamine Loop...</span></div>
-                <div class="reel r-c"><span>Still Scrolling...</span></div>
+                <div class="reel r-a"><div class="reel-meta"><b>@dailyclips</b><p>Infinite loop...</p></div></div>
+                <div class="reel r-b"><div class="reel-meta"><b>@trend.hub</b><p>Keep scrolling...</p></div></div>
               </div>
             </section>
 
@@ -100,8 +113,8 @@
             <section id="view-messages" class="view">
               <div class="app-top"><span class="app-title">Messages</span></div>
               <div class="scroll-area">
-                <div class="dm" style="padding:15px; border-bottom:1px solid #eee;"><b>Omar</b><br><span style="font-size:0.8rem; color:#666;">Hey! Did you finish that task?</span></div>
-                <div class="dm" style="padding:15px; border-bottom:1px solid #eee;"><b>Maya</b><br><span style="font-size:0.8rem; color:#666;">Check the study notes.</span></div>
+                <div class="dm"><div class="avatar a1"></div><div class="dm-txt"><b>Maya</b><span>Sent you a file.</span></div></div>
+                <div class="dm"><div class="avatar a2"></div><div class="dm-txt"><b>Omar</b><span>Ready to study?</span></div></div>
               </div>
             </section>
 
@@ -119,10 +132,10 @@
           </main>
 
           <nav class="tabbar">
-            <button class="tab active" data-tab="feed"><span>Home</span></button>
-            <button class="tab" data-tab="reels"><span>Reels</span><i class="lock-badge hidden" id="lock-badge">🔒</i></button>
-            <button class="tab" data-tab="messages"><span>DMs</span></button>
-            <button class="tab" data-tab="therapy"><span>Compass</span></button>
+            <button class="tab active" data-tab="feed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><span>Home</span></button>
+            <button class="tab" data-tab="reels"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg><span>Reels</span><i class="lock-badge hidden" id="lock-badge">🔒</i></button>
+            <button class="tab" data-tab="messages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>DMs</span></button>
+            <button class="tab" data-tab="therapy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16.2 7.8l-2 5.6-5.6 2 2-5.6 5.6-2z"/></svg><span>Compass</span></button>
           </nav>
         </div>
       </div>
@@ -130,6 +143,14 @@
     </div>
   </div>
 </header>
+
+<!-- LOGS -->
+<section class="section console-section">
+    <div class="console">
+      <div class="console-bar"><span class="cdot red"></span><span class="cdot yellow"></span><span class="cdot green"></span><span class="console-title">focusguard://local-storage</span></div>
+      <div id="console-body" class="console-body"><div class="log log-sys">--:-- daemon started · storage=device</div></div>
+    </div>
+</section>
 
 <script src="script.js"></script>
 </body>
